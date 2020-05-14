@@ -40,10 +40,9 @@ def compute_loss_multiclass(pred_llh, labels, n_classes):
                 labels_under_perm = torch.from_numpy(permutations[j, labels_single.data.cpu().numpy().astype(int)])
             else:
                 labels_under_perm = torch.from_numpy(permutations[j, labels_single.data.numpy().astype(int)])
-
             loss_under_perm = criterion(pred_llh_single, Variable(labels_under_perm.type(dtype_l), volatile=False))
             loss_single = loss_under_perm if j == 0 else torch.min(loss_single, loss_under_perm)
-        loss += loss_single
+            loss += loss_single
     return loss
 
 
@@ -65,7 +64,7 @@ def compute_accuracy_multiclass(pred_llh, labels, n_classes):
             labels_under_perm = permutations[j, labels_single.astype(int)]
             acc_under_perm = compute_accuracy_mcd_batch(pred_labels_single, labels_under_perm)
             acc_single = acc_under_perm if j == 0 else np.max([acc_single, acc_under_perm])
-        acc += acc_single
+            acc += acc_single
     acc = acc / labels.shape[0]
     acc = (acc - 1 / n_classes) / (1 - 1 / n_classes)
     return acc
@@ -99,12 +98,8 @@ class Permutor:
 
 
 if __name__ == '__main__':
-    pred = Variable(torch.randn(2, 3, 5), volatile=False)
-    labels_npy = np.zeros([2, 3])
-    labels_npy[0, 0] = 1
-    labels_npy[0, 1] = 2
-    labels_npy[0, 2] = 0
-    labels_npy[1, 0] = 4
-    labels_npy[1, 1] = 0
-    labels_npy[1, 2] = 2
-    labels = Variable(torch.from_numpy(labels_npy), volatile=False)
+    n_classes = 5
+    y_true = np.array([[1., 2., 0.], [4., 0., 2.]])
+    y_true = Variable(torch.from_numpy(y_true), volatile=False)
+    y_pred = Variable(torch.randn(2, 3, 5), volatile=False)
+    print(compute_loss_multiclass(y_pred, y_true, n_classes))

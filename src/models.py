@@ -16,8 +16,8 @@ else:
 
 def GMul(W, x):
     """
-        x is a tensor of size (bs, N, num_features)
         W is a tensor of size (bs, N, N, J)
+        x is a tensor of size (bs, N, num_features)
     """
     W_size = W.size()
     N = W_size[-3]

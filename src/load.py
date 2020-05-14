@@ -38,7 +38,7 @@ def get_Pm(W):
     Pm = np.zeros([N, M * 2])
     for n in range(N):
         for m in range(n + 1, N):
-            if (W[n][m] == 1):
+            if W[n][m] == 1:
                 Pm[n][p] = 1
                 Pm[m][p] = 1
                 Pm[n][p + M] = 1

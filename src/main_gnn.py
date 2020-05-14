@@ -13,45 +13,6 @@ from losses import compute_loss_multiclass, compute_accuracy_multiclass
 from models import GNN_multiclass, lGNN_multiclass
 
 matplotlib.use('Agg')
-parser = argparse.ArgumentParser()
-
-###############################################################################
-#                             General Settings                                #
-###############################################################################
-
-parser.add_argument('--num_examples_train', nargs='?', const=1, type=int, default=int(6000))
-parser.add_argument('--num_examples_test', nargs='?', const=1, type=int, default=int(1000))
-parser.add_argument('--edge_density', nargs='?', const=1, type=float, default=0.2)
-parser.add_argument('--p_SBM', nargs='?', const=1, type=float, default=0.8)
-parser.add_argument('--q_SBM', nargs='?', const=1, type=float, default=0.2)
-parser.add_argument('--random_noise', action='store_true')
-parser.add_argument('--noise', nargs='?', const=1, type=float, default=0.03)
-parser.add_argument('--noise_model', nargs='?', const=1, type=int, default=2)
-parser.add_argument('--generative_model', nargs='?', const=1, type=str, default='ErdosRenyi')
-parser.add_argument('--batch_size', nargs='?', const=1, type=int, default=1)
-parser.add_argument('--mode', nargs='?', const=1, type=str, default='train')
-parser.add_argument('--path_gnn', nargs='?', const=1, type=str, default='')
-parser.add_argument('--filename_existing_gnn', nargs='?', const=1, type=str, default='')
-parser.add_argument('--print_freq', nargs='?', const=1, type=int, default=100)
-parser.add_argument('--test_freq', nargs='?', const=1, type=int, default=500)
-parser.add_argument('--save_freq', nargs='?', const=1, type=int, default=2000)
-parser.add_argument('--clip_grad_norm', nargs='?', const=1, type=float, default=40.0)
-parser.add_argument('--freeze_bn', dest='eval_vs_train', action='store_true')
-parser.set_defaults(eval_vs_train=False)
-
-###############################################################################
-#                                 GNN Settings                                #
-###############################################################################
-
-parser.add_argument('--num_features', nargs='?', const=1, type=int, default=20)
-parser.add_argument('--num_layers', nargs='?', const=1, type=int, default=20)
-parser.add_argument('--n_classes', nargs='?', const=1, type=int, default=2)
-parser.add_argument('--J', nargs='?', const=1, type=int, default=4)
-parser.add_argument('--N_train', nargs='?', const=1, type=int, default=50)
-parser.add_argument('--N_test', nargs='?', const=1, type=int, default=50)
-parser.add_argument('--lr', nargs='?', const=1, type=float, default=1e-3)
-
-args = parser.parse_args()
 
 if torch.cuda.is_available():
     dtype = torch.cuda.FloatTensor
@@ -60,12 +21,7 @@ else:
     dtype = torch.FloatTensor
     dtype_l = torch.LongTensor
 
-batch_size = args.batch_size
 criterion = nn.CrossEntropyLoss()
-template1 = '{:<10} {:<10} {:<10} {:<15} {:<10} {:<10} {:<10} '
-template2 = '{:<10} {:<10.5f} {:<10.5f} {:<15} {:<10} {:<10} {:<10.3f} \n'
-template3 = '{:<10} {:<10} {:<10} '
-template4 = '{:<10} {:<10.5f} {:<10.5f} \n'
 
 
 def train_mcd_single(gnn: GNN_multiclass, optimizer, gen: Generator, n_classes, it):
@@ -99,10 +55,8 @@ def train_mcd_single(gnn: GNN_multiclass, optimizer, gen: Generator, n_classes, 
     else:
         loss_value = float(loss.data.numpy())
 
-    info = ['iter', 'avg loss', 'avg acc', 'edge_density', 'noise', 'model', 'elapsed']
-    out = [it, loss_value, acc, args.edge_density, args.noise, 'GNN', elapsed]
-    print(template1.format(*info))
-    print(template2.format(*out))
+    print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
+    print(f"{it:<10} {loss_value:<10.5f} {acc:<10.5f} {'GNN':<10} {elapsed:<10.3f} \n")
 
     del WW
     del x
@@ -110,7 +64,7 @@ def train_mcd_single(gnn: GNN_multiclass, optimizer, gen: Generator, n_classes, 
     return loss_value, acc
 
 
-def train(gnn: GNN_multiclass, gen: Generator, n_classes=args.n_classes, iters=args.num_examples_train):
+def train(gnn: GNN_multiclass, gen: Generator, n_classes, iters):
     gnn.train()
     optimizer = torch.optim.Adamax(gnn.parameters(), lr=args.lr)
     loss_lst = np.zeros([iters])
@@ -152,10 +106,8 @@ def test_mcd_single(gnn: GNN_multiclass, gen: Generator, n_classes, it):
     else:
         loss_value = float(loss_test.data.numpy())
 
-    info = ['iter', 'avg loss', 'avg acc', 'edge_density', 'noise', 'model', 'elapsed']
-    out = [it, loss_value, acc_test, args.edge_density, args.noise, 'GNN', elapsed]
-    print(template1.format(*info))
-    print(template2.format(*out))
+    print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
+    print(f"{it:<10} {loss_value:<10.5f} {acc_test:<10.5f} {'GNN':<10} {elapsed:<10.3f} \n")
 
     del WW
     del x
@@ -163,7 +115,7 @@ def test_mcd_single(gnn: GNN_multiclass, gen: Generator, n_classes, it):
     return loss_value, acc_test
 
 
-def test(gnn, gen: Generator, n_classes, iters=args.num_examples_test):
+def test(gnn, gen: Generator, n_classes, iters):
     gnn.train()
     loss_lst = np.zeros([iters])
     acc_lst = np.zeros([iters])
@@ -182,19 +134,48 @@ def count_parameters(model):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    ###############################################################################
+    #                             General Settings                                #
+    ###############################################################################
+
+    parser.add_argument('--num_examples_train', nargs='?', const=1, type=int, default=6000)
+    parser.add_argument('--num_examples_test', nargs='?', const=1, type=int, default=100)
+    parser.add_argument('--p_SBM', nargs='?', const=1, type=float, default=0.8)
+    parser.add_argument('--q_SBM', nargs='?', const=1, type=float, default=0.2)
+    parser.add_argument('--generative_model', nargs='?', const=1, type=str, default='SBM_multiclass')
+    parser.add_argument('--batch_size', nargs='?', const=1, type=int, default=1)
+    parser.add_argument('--mode', nargs='?', const=1, type=str, default='train')
+    parser.add_argument('--path_gnn', nargs='?', const=1, type=str, default='')
+    parser.add_argument('--filename_existing_gnn', nargs='?', const=1, type=str, default='')
+    parser.add_argument('--print_freq', nargs='?', const=1, type=int, default=1)
+    parser.add_argument('--test_freq', nargs='?', const=1, type=int, default=500)
+    parser.add_argument('--save_freq', nargs='?', const=1, type=int, default=2000)
+    parser.add_argument('--clip_grad_norm', nargs='?', const=1, type=float, default=40.0)
+    parser.add_argument('--freeze_bn', dest='eval_vs_train', action='store_true')
+    parser.set_defaults(eval_vs_train=False)
+
+    ###############################################################################
+    #                                 GNN Settings                                #
+    ###############################################################################
+
+    parser.add_argument('--num_features', nargs='?', const=1, type=int, default=8)
+    parser.add_argument('--num_layers', nargs='?', const=1, type=int, default=30)
+    parser.add_argument('--n_classes', nargs='?', const=1, type=int, default=5)
+    parser.add_argument('--J', nargs='?', const=1, type=int, default=2)
+    parser.add_argument('--N_train', nargs='?', const=1, type=int, default=400)
+    parser.add_argument('--N_test', nargs='?', const=1, type=int, default=400)
+    parser.add_argument('--lr', nargs='?', const=1, type=float, default=0.004)
+
+    args = parser.parse_args()
+    print(args)
+
+    batch_size = args.batch_size
+
     # One fixed generator
-    gen = Generator()
-    # generator setup
-    gen.N_train = args.N_train
-    gen.N_test = args.N_test
-    gen.edge_density = args.edge_density
-    gen.p_SBM = args.p_SBM
-    gen.q_SBM = args.q_SBM
-    gen.random_noise = args.random_noise
-    gen.noise = args.noise
-    gen.noise_model = args.noise_model
-    gen.generative_model = args.generative_model
-    gen.n_classes = args.n_classes
+    gen = Generator(N_train=args.N_train, N_test=args.N_test, p_SBM=args.p_SBM, q_SBM=args.q_SBM,
+                    generative_model=args.generative_model, n_classes=args.n_classes)
 
     torch.backends.cudnn.enabled = False
 
@@ -229,8 +210,8 @@ if __name__ == '__main__':
             path_plus_name = os.path.join(args.path_gnn, filename)
         else:
             print('No such a gnn exists; creating a brand new one')
-            filename = 'gnn_J' + str(args.J) + '_lyr' + str(args.num_layers) + '_Ntr' + str(
-                args.N_train) + '_num' + str(args.num_examples_train)
+            filename = 'gnn_J' + str(args.J) + '_lyr' + str(args.num_layers) + '_Ntr' + str(args.N_train) + \
+                       '_num' + str(args.num_examples_train)
             path_plus_name = os.path.join(args.path_gnn, filename)
             if args.generative_model == 'SBM':
                 gnn = GNN_multiclass(args.num_features, args.num_layers, args.J + 2, n_classes=2)
@@ -243,9 +224,9 @@ if __name__ == '__main__':
             gnn.cuda()
         print('Training begins')
         if args.generative_model == 'SBM':
-            train(gnn, gen, 2)
+            train(gnn, gen, 2, args.num_examples_train)
         elif args.generative_model == 'SBM_multiclass':
-            train(gnn, gen, args.n_classes)
+            train(gnn, gen, args.n_classes, args.num_examples_train)
         print('Saving gnn ' + filename)
         if torch.cuda.is_available():
             torch.save(gnn.cpu(), path_plus_name)
@@ -261,6 +242,6 @@ if __name__ == '__main__':
         print('model status: train')
         gnn.train()
 
-    test(gnn, gen, args.n_classes)
+    test(gnn, gen, args.n_classes, args.num_examples_train)
 
     print('total num of params:', count_parameters(gnn))
