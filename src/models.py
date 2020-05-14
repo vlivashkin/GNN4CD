@@ -1,17 +1,6 @@
-import matplotlib
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-matplotlib.use('Agg')
-
-if torch.cuda.is_available():
-    dtype = torch.cuda.FloatTensor
-    dtype_l = torch.cuda.LongTensor
-else:
-    dtype = torch.FloatTensor
-    dtype_l = torch.cuda.LongTensor
 
 
 def GMul(W, x):
@@ -42,7 +31,7 @@ class gnn_atomic(nn.Module):
         self.num_outputs = feature_maps[2]
         self.fc1 = nn.Linear(self.num_inputs, self.num_outputs // 2)
         self.fc2 = nn.Linear(self.num_inputs, self.num_outputs - self.num_outputs // 2)
-        self.bn2d = nn.BatchNorm2d(self.num_outputs)
+        self.bn2d = nn.BatchNorm1d(self.num_outputs)
 
     def forward(self, WW, x):
         x = GMul(WW, x)

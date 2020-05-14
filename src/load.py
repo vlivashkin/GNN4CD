@@ -1,17 +1,7 @@
-import matplotlib
 import numpy as np
 
 import torch
 from torch.autograd import Variable
-
-matplotlib.use('Agg')
-
-if torch.cuda.is_available():
-    dtype_sp = torch.cuda.sparse.FloatTensor
-    dtype = torch.cuda.FloatTensor
-else:
-    dtype_sp = torch.sparse.FloatTensor
-    dtype = torch.FloatTensor
 
 
 def compute_operators(W, J):
@@ -30,12 +20,13 @@ def compute_operators(W, J):
     return WW, x
 
 
-def get_Pm(W):
+def get_Pm_Pd(W):
     N = W.shape[0]
     W = W * (np.ones([N, N]) - np.eye(N))
     M = int(W.sum()) // 2
+
+    Pm, Pd = np.zeros([N, M * 2]), np.zeros([N, M * 2])
     p = 0
-    Pm = np.zeros([N, M * 2])
     for n in range(N):
         for m in range(n + 1, N):
             if W[n][m] == 1:
@@ -43,35 +34,24 @@ def get_Pm(W):
                 Pm[m][p] = 1
                 Pm[n][p + M] = 1
                 Pm[m][p + M] = 1
-                p += 1
-    return Pm
 
-
-def get_Pd(W):
-    N = W.shape[0]
-    W = W * (np.ones([N, N]) - np.eye(N))
-    M = int(W.sum()) // 2
-    p = 0
-    Pd = np.zeros([N, M * 2])
-    for n in range(N):
-        for m in range(n + 1, N):
-            if W[n][m] == 1:
                 Pd[n][p] = 1
                 Pd[m][p] = -1
                 Pd[n][p + M] = -1
                 Pd[m][p + M] = 1
+
                 p += 1
-    return Pd
+    return Pm, Pd
 
 
 def get_P(W):
-    P = np.concatenate((np.expand_dims(get_Pm(W), 2), np.expand_dims(get_Pd(W), 2)), axis=2)
+    Pm, Pd = get_Pm_Pd(W)
+    P = np.concatenate((np.expand_dims(Pm, 2), np.expand_dims(Pd, 2)), axis=2)
     return P
 
 
 def get_NB_2(W):
-    Pm = get_Pm(W)
-    Pd = get_Pd(W)
+    Pm, Pd = get_Pm_Pd(W)
     Pf = (Pm + Pd) / 2
     Pt = (Pm - Pd) / 2
     NB = np.transpose(Pt).dot(Pf) * (1 - np.transpose(Pf).dot(Pt))

@@ -2,7 +2,6 @@ import argparse
 import os
 import time
 
-import matplotlib
 import numpy as np
 import torch
 import torch.nn as nn
@@ -12,7 +11,6 @@ from load import get_lg_inputs
 from losses import compute_loss_multiclass, compute_accuracy_multiclass
 from models import lGNN_multiclass
 
-matplotlib.use('Agg')
 
 if torch.cuda.is_available():
     dtype = torch.cuda.FloatTensor
@@ -61,8 +59,8 @@ def train_mcd_single(gnn: lGNN_multiclass, optimizer, gen: Generator, n_classes,
     else:
         loss_value = float(loss.data.numpy())
 
-    print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
-    print(f"{it:<10} {loss_value:<10.5f} {acc:<10.5f} {'LGNN':<10} {elapsed:<10.3f} \n")
+    # print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
+    print(f"{it:<10} {loss_value:<10.5f} {acc:<10.5f} {'LGNN':<10} {elapsed:<10.3f}")
 
     del WW
     del WW_lg
@@ -125,8 +123,8 @@ def test_mcd_single(gnn: lGNN_multiclass, gen: Generator, n_classes, it):
     else:
         loss_value = float(loss_test.data.numpy())
 
-    print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
-    print(f"{it:<10} {loss_value:<10.5f} {acc_test:<10.5f} {'LGNN':<10} {elapsed:<10.3f} \n")
+    # print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
+    print(f"{it:<10} {loss_value:<10.5f} {acc_test:<10.5f} {'LGNN':<10} {elapsed:<10.3f}")
 
     del WW
     del WW_lg

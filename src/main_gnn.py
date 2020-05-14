@@ -2,7 +2,6 @@ import argparse
 import os
 import time
 
-import matplotlib
 import numpy as np
 import torch
 import torch.nn as nn
@@ -11,8 +10,6 @@ from data_generator import Generator
 from load import get_gnn_inputs
 from losses import compute_loss_multiclass, compute_accuracy_multiclass
 from models import GNN_multiclass, lGNN_multiclass
-
-matplotlib.use('Agg')
 
 if torch.cuda.is_available():
     dtype = torch.cuda.FloatTensor
@@ -55,8 +52,8 @@ def train_mcd_single(gnn: GNN_multiclass, optimizer, gen: Generator, n_classes, 
     else:
         loss_value = float(loss.data.numpy())
 
-    print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
-    print(f"{it:<10} {loss_value:<10.5f} {acc:<10.5f} {'GNN':<10} {elapsed:<10.3f} \n")
+    # print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
+    print(f"{it:<10} {loss_value:<10.5f} {acc:<10.5f} {'GNN':<10} {elapsed:<10.3f}")
 
     del WW
     del x
@@ -83,7 +80,7 @@ def test_mcd_single(gnn: GNN_multiclass, gen: Generator, n_classes, it):
     start = time.time()
     W, labels = gen.sample_otf_single(is_training=False, cuda=torch.cuda.is_available())
     labels = labels.type(dtype_l)
-    if (args.generative_model == 'SBM_multiclass') and (args.n_classes == 2):
+    if args.generative_model == 'SBM_multiclass' and args.n_classes == 2:
         labels = (labels + 1) / 2
     WW, x = get_gnn_inputs(W, args.J)
 
@@ -106,8 +103,8 @@ def test_mcd_single(gnn: GNN_multiclass, gen: Generator, n_classes, it):
     else:
         loss_value = float(loss_test.data.numpy())
 
-    print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
-    print(f"{it:<10} {loss_value:<10.5f} {acc_test:<10.5f} {'GNN':<10} {elapsed:<10.3f} \n")
+    # print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
+    print(f"{it:<10} {loss_value:<10.5f} {acc_test:<10.5f} {'GNN':<10} {elapsed:<10.3f}")
 
     del WW
     del x
@@ -142,14 +139,14 @@ if __name__ == '__main__':
 
     parser.add_argument('--num_examples_train', nargs='?', const=1, type=int, default=6000)
     parser.add_argument('--num_examples_test', nargs='?', const=1, type=int, default=100)
-    parser.add_argument('--p_SBM', nargs='?', const=1, type=float, default=0.8)
-    parser.add_argument('--q_SBM', nargs='?', const=1, type=float, default=0.2)
+    parser.add_argument('--p_SBM', nargs='?', const=1, type=float, default=0.3)
+    parser.add_argument('--q_SBM', nargs='?', const=1, type=float, default=0.15)
     parser.add_argument('--generative_model', nargs='?', const=1, type=str, default='SBM_multiclass')
     parser.add_argument('--batch_size', nargs='?', const=1, type=int, default=1)
     parser.add_argument('--mode', nargs='?', const=1, type=str, default='train')
     parser.add_argument('--path_gnn', nargs='?', const=1, type=str, default='')
     parser.add_argument('--filename_existing_gnn', nargs='?', const=1, type=str, default='')
-    parser.add_argument('--print_freq', nargs='?', const=1, type=int, default=1)
+    parser.add_argument('--print_freq', nargs='?', const=1, type=int, default=10)
     parser.add_argument('--test_freq', nargs='?', const=1, type=int, default=500)
     parser.add_argument('--save_freq', nargs='?', const=1, type=int, default=2000)
     parser.add_argument('--clip_grad_norm', nargs='?', const=1, type=float, default=40.0)

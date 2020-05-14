@@ -42,7 +42,7 @@ def compute_loss_multiclass(pred_llh, labels, n_classes):
                 labels_under_perm = torch.from_numpy(permutations[j, labels_single.data.numpy().astype(int)])
             loss_under_perm = criterion(pred_llh_single, Variable(labels_under_perm.type(dtype_l), volatile=False))
             loss_single = loss_under_perm if j == 0 else torch.min(loss_single, loss_under_perm)
-            loss += loss_single
+        loss += loss_single
     return loss
 
 
@@ -64,7 +64,7 @@ def compute_accuracy_multiclass(pred_llh, labels, n_classes):
             labels_under_perm = permutations[j, labels_single.astype(int)]
             acc_under_perm = compute_accuracy_mcd_batch(pred_labels_single, labels_under_perm)
             acc_single = acc_under_perm if j == 0 else np.max([acc_single, acc_under_perm])
-            acc += acc_single
+        acc += acc_single
     acc = acc / labels.shape[0]
     acc = (acc - 1 / n_classes) / (1 - 1 / n_classes)
     return acc
