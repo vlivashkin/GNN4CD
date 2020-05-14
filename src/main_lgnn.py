@@ -71,12 +71,12 @@ def train_mcd_single(gnn: lGNN_multiclass, optimizer, gen: Generator, n_classes,
     return loss_value, acc
 
 
-def train(gnn: lGNN_multiclass, gen: Generator, n_classes, iters):
+def train(gnn: lGNN_multiclass, gen: Generator, n_classes, n_iters):
     gnn.train()
     optimizer = torch.optim.Adamax(gnn.parameters(), lr=args.lr)
-    loss_lst = np.zeros([iters])
-    acc_lst = np.zeros([iters])
-    for it in range(iters):
+    loss_lst = np.zeros([n_iters])
+    acc_lst = np.zeros([n_iters])
+    for it in range(n_iters):
         # print ("Num of edges: ", np.sum(W))
         loss_single, acc_single = train_mcd_single(gnn, optimizer, gen, n_classes, it)
         loss_lst[it] = loss_single
@@ -158,15 +158,15 @@ if __name__ == '__main__':
     ###############################################################################
     parser.add_argument('--num_examples_train', nargs='?', const=1, type=int, default=6000)
     parser.add_argument('--num_examples_test', nargs='?', const=1, type=int, default=100)
-    parser.add_argument('--p_SBM', nargs='?', const=1, type=float, default=0.8)
-    parser.add_argument('--q_SBM', nargs='?', const=1, type=float, default=0.2)
+    parser.add_argument('--p_SBM', nargs='?', const=1, type=float, default=0.3)
+    parser.add_argument('--q_SBM', nargs='?', const=1, type=float, default=0.15)
     parser.add_argument('--generative_model', nargs='?', const=1, type=str, default='SBM_multiclass')
     parser.add_argument('--batch_size', nargs='?', const=1, type=int, default=1)
     parser.add_argument('--mode', nargs='?', const=1, type=str, default='train')
     parser.add_argument('--path_dataset', nargs='?', const=1, type=str, default='')
     parser.add_argument('--path_gnn', nargs='?', const=1, type=str, default='')
     parser.add_argument('--filename_existing_gnn', nargs='?', const=1, type=str, default='')
-    parser.add_argument('--print_freq', nargs='?', const=1, type=int, default=100)
+    parser.add_argument('--print_freq', nargs='?', const=1, type=int, default=10)
     parser.add_argument('--test_freq', nargs='?', const=1, type=int, default=500)
     parser.add_argument('--save_freq', nargs='?', const=1, type=int, default=2000)
     parser.add_argument('--clip_grad_norm', nargs='?', const=1, type=float, default=40.0)
@@ -176,7 +176,6 @@ if __name__ == '__main__':
     ###############################################################################
     #                                 GNN Settings                                #
     ###############################################################################
-
     parser.add_argument('--num_features', nargs='?', const=1, type=int, default=8)
     parser.add_argument('--num_layers', nargs='?', const=1, type=int, default=30)
     parser.add_argument('--n_classes', nargs='?', const=1, type=int, default=5)
@@ -187,8 +186,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print(args)
-
-    batch_size = args.batch_size
 
     print('main file starts here')
 
@@ -202,7 +199,7 @@ if __name__ == '__main__':
         print('In testing mode')
         filename = args.filename_existing_gnn
         path_plus_name = os.path.join(args.path_gnn, filename)
-        if (filename != '') and (os.path.exists(path_plus_name)):
+        if filename != '' and os.path.exists(path_plus_name):
             print('Loading gnn ' + filename)
             gnn = torch.load(path_plus_name)
             if torch.cuda.is_available():
@@ -222,7 +219,7 @@ if __name__ == '__main__':
     elif args.mode == 'train':
         filename = args.filename_existing_gnn
         path_plus_name = os.path.join(args.path_gnn, filename)
-        if (filename != '') and (os.path.exists(path_plus_name)):
+        if filename != '' and os.path.exists(path_plus_name):
             print('Loading gnn ' + filename)
             gnn = torch.load(path_plus_name)
             filename = filename + '_Ntr' + str(args.N_train) + '_num' + str(args.num_examples_train)

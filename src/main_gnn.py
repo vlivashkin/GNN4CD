@@ -52,8 +52,9 @@ def train_mcd_single(gnn: GNN_multiclass, optimizer, gen: Generator, n_classes, 
     else:
         loss_value = float(loss.data.numpy())
 
-    # print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
-    print(f"{it:<10} {loss_value:<10.5f} {acc:<10.5f} {'GNN':<10} {elapsed:<10.3f}")
+    if it % args.print_freq == 0:
+        # print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
+        print(f"{it:<10} {loss_value:<10.5f} {acc:<10.5f} {'GNN':<10} {elapsed:<10.3f}")
 
     del WW
     del x
@@ -84,8 +85,6 @@ def test_mcd_single(gnn: GNN_multiclass, gen: Generator, n_classes, it):
         labels = (labels + 1) / 2
     WW, x = get_gnn_inputs(W, args.J)
 
-    print('WW', WW.shape)
-
     if torch.cuda.is_available():
         WW.cuda()
         x.cuda()
@@ -103,8 +102,9 @@ def test_mcd_single(gnn: GNN_multiclass, gen: Generator, n_classes, it):
     else:
         loss_value = float(loss_test.data.numpy())
 
-    # print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
-    print(f"{it:<10} {loss_value:<10.5f} {acc_test:<10.5f} {'GNN':<10} {elapsed:<10.3f}")
+    if it % args.print_freq == 0:
+        # print(f"{'iter':<10} {'avg loss':<10} {'avg acc':<10} {'model':<10} {'elapsed':<10} ")
+        print(f"{it:<10} {loss_value:<10.5f} {acc_test:<10.5f} {'GNN':<10} {elapsed:<10.3f}")
 
     del WW
     del x
@@ -136,7 +136,6 @@ if __name__ == '__main__':
     ###############################################################################
     #                             General Settings                                #
     ###############################################################################
-
     parser.add_argument('--num_examples_train', nargs='?', const=1, type=int, default=6000)
     parser.add_argument('--num_examples_test', nargs='?', const=1, type=int, default=100)
     parser.add_argument('--p_SBM', nargs='?', const=1, type=float, default=0.3)
@@ -144,7 +143,7 @@ if __name__ == '__main__':
     parser.add_argument('--generative_model', nargs='?', const=1, type=str, default='SBM_multiclass')
     parser.add_argument('--batch_size', nargs='?', const=1, type=int, default=1)
     parser.add_argument('--mode', nargs='?', const=1, type=str, default='train')
-    parser.add_argument('--path_gnn', nargs='?', const=1, type=str, default='')
+    parser.add_argument('--path_gfnn', nargs='?', const=1, type=str, default='')
     parser.add_argument('--filename_existing_gnn', nargs='?', const=1, type=str, default='')
     parser.add_argument('--print_freq', nargs='?', const=1, type=int, default=10)
     parser.add_argument('--test_freq', nargs='?', const=1, type=int, default=500)
@@ -156,7 +155,6 @@ if __name__ == '__main__':
     ###############################################################################
     #                                 GNN Settings                                #
     ###############################################################################
-
     parser.add_argument('--num_features', nargs='?', const=1, type=int, default=8)
     parser.add_argument('--num_layers', nargs='?', const=1, type=int, default=30)
     parser.add_argument('--n_classes', nargs='?', const=1, type=int, default=5)
@@ -168,8 +166,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
 
-    batch_size = args.batch_size
-
     # One fixed generator
     gen = Generator(N_train=args.N_train, N_test=args.N_test, p_SBM=args.p_SBM, q_SBM=args.q_SBM,
                     generative_model=args.generative_model, n_classes=args.n_classes)
@@ -180,7 +176,7 @@ if __name__ == '__main__':
         print('In testing mode')
         filename = args.filename_existing_gnn
         path_plus_name = os.path.join(args.path_gnn, filename)
-        if (filename != '') and (os.path.exists(path_plus_name)):
+        if filename != '' and os.path.exists(path_plus_name):
             print('Loading gnn ' + filename)
             gnn = torch.load(path_plus_name)
             if torch.cuda.is_available():
@@ -200,7 +196,7 @@ if __name__ == '__main__':
     elif args.mode == 'train':
         filename = args.filename_existing_gnn
         path_plus_name = os.path.join(args.path_gnn, filename)
-        if (filename != '') and (os.path.exists(path_plus_name)):
+        if filename != '' and os.path.exists(path_plus_name):
             print('Loading gnn ' + filename)
             gnn = torch.load(path_plus_name)
             filename = filename + '_Ntr' + str(args.N_train) + '_num' + str(args.num_examples_train)
