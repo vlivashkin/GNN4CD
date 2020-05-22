@@ -1,0 +1,3 @@
+[submodule "GNN4CD"]
+	path = GNN4CD
+	url = https://github.com/zhengdao-chen/GNN4CD
