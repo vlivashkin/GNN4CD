@@ -1,5 +1,5 @@
 import numpy as np
-
+from scipy.sparse import coo_matrix
 
 def compute_operators(W, J):
     """
@@ -25,10 +25,12 @@ def get_linear_graph(W):
     Computes line graph and matrices Pm, Pd
     """
     N = W.shape[0]
-    W = W * (np.ones([N, N]) - np.eye(N))
-    M = int(W.sum()) // 2
+    W = W * (np.ones([N, N]) - np.eye(N))  # remove diagonal
+    M = int(W.sum()) // 2  # 
+    print('M', M)
 
-    Pm, Pd = np.zeros([N, M * 2]), np.zeros([N, M * 2])
+    Pm, Pd = np.zeros([N, M * 2]), np.zeros([N, M * 2])  # assumed undirected graph
+    print('Pm', Pm)
     p = 0
     for n in range(N):
         for m in range(n + 1, N):
@@ -48,5 +50,6 @@ def get_linear_graph(W):
     Pf = (Pm + Pd) / 2
     Pt = (Pm - Pd) / 2
     W_lg = np.transpose(Pt).dot(Pf) * (1 - np.transpose(Pf).dot(Pt))
-    PmPd = np.concatenate((np.expand_dims(Pm, 2), np.expand_dims(Pd, 2)), axis=2)
-    return W_lg, PmPd
+    PmPd = np.stack((Pm, Pd), axis=2)
+    print('PmPd', PmPd)
+    return W_lg, PmPd  # (coo_matrix(Pm), coo_matrix(Pd))

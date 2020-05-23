@@ -8,17 +8,10 @@ def GMul(W, x):
         W is a tensor of size (bs, N, N, J)
         x is a tensor of size (bs, N, num_features)
     """
-    W_size = W.size()
-    N = W_size[-3]
+    N = W.shape[1]
     W_lst = W.split(1, 3)
-    if N > 5000:
-        output_lst = []
-        for W in W_lst:
-            output_lst.append(torch.bmm(W.squeeze(3), x))
-        output = torch.cat(output_lst, 1)
-    else:
-        W = torch.cat(W_lst, 1).squeeze(3)  # W is now a tensor of size (bs, J*N, N)
-        output = torch.bmm(W, x)  # output has size (bs, J*N, num_features)
+    W = torch.cat(W_lst, 1).squeeze(3)  # W is now a tensor of size (bs, J*N, N)
+    output = torch.bmm(W, x)  # output has size (bs, J*N, num_features)
     output = output.split(N, 1)
     output = torch.cat(output, 2)  # output has size (bs, N, J*num_features)
     return output
@@ -43,7 +36,7 @@ class GNNAtomic(nn.Module):
         x = torch.cat((x1, x2), 1)
         x = self.bn2d(x)
         x = x.view(*x_size[:-1], self.num_outputs)
-        return WW, x
+        return x
 
 
 class GNNAtomicLast(nn.Module):
@@ -60,7 +53,7 @@ class GNNAtomicLast(nn.Module):
         x = x.view(x_size[0] * x_size[1], -1)
         x = self.fc(x)  # has size (bs*N, num_outputs)
         x = x.view(*x_size[:-1], self.num_outputs)
-        return WW, x
+        return x
 
 
 class GNN(nn.Module):
@@ -78,8 +71,8 @@ class GNN(nn.Module):
         self.layerlast = GNNAtomicLast(self.featuremap_end, J, n_classes)
 
     def forward(self, W, x):
-        cur = self.layer0(W, x)
+        x = self.layer0(W, x)
         for i in range(self.num_layers):
-            cur = self._modules['layer{}'.format(i + 1)](*cur)
-        out = self.layerlast(*cur)
+            x = self._modules['layer{}'.format(i + 1)](W, x)
+        out = self.layerlast(W, x)
         return out[1]

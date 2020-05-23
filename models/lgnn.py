@@ -57,7 +57,7 @@ class GNNAtomicLg(nn.Module):
 
         zdc1 = zdc1.view(*xda1_size[:-1], 2 * self.feature_maps[2])
         y_output = zdc1
-        return WW, x_output, WW_lg, y_output, P
+        return x_output, y_output
 
 
 class GNNAtomicLgLast(nn.Module):
@@ -69,7 +69,7 @@ class GNNAtomicLgLast(nn.Module):
         self.fcx2x_1 = nn.Linear(self.num_inputs, self.num_outputs)
         self.fcy2x_1 = nn.Linear(self.num_inputs_2, self.num_outputs)
 
-    def forward(self, W, x, W_lg, y, P):
+    def forward(self, W, x, y, P):
         x2x = GMul(W, x)  # out has size (bs, N, num_inputs)
         x2x_size = x2x.size()
         x2x = x2x.contiguous()
@@ -81,7 +81,7 @@ class GNNAtomicLgLast(nn.Module):
 
         xy2x = self.fcx2x_1(x2x) + self.fcy2x_1(y2x)  # has size (bs*N, num_outputs)
         x_output = xy2x.view(*x2x_size[:-1], self.num_outputs)
-        return W, x_output
+        return x_output
 
 
 class LGNN(nn.Module):
@@ -99,8 +99,8 @@ class LGNN(nn.Module):
         self.layerlast = GNNAtomicLgLast(self.featuremap_end, J, n_classes)
 
     def forward(self, W, x, W_lg, y, P):
-        cur = self.layer0(W, x, W_lg, y, P)
+        x, y = self.layer0(W, x, W_lg, y, P)
         for i in range(self.num_layers):
-            cur = self._modules['layer{}'.format(i + 1)](*cur)
-        out = self.layerlast(*cur)
+            x, y = self._modules['layer{}'.format(i + 1)](W, x, W_lg, y, P)
+        out = self.layerlast(W, x, y, P)
         return out[1]

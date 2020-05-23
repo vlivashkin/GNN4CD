@@ -12,7 +12,7 @@ class SBM_Dataset(Dataset):
     Simple wrapper of networkx SBM generator
     """
 
-    def __init__(self, n, k, p_in, p_out, n_graphs=1000, mode='pre-generate', verbose=False):
+    def __init__(self, n, k, p_in, p_out, n_graphs=1000, mode='pre-generate', verbose=False, n_jobs=-1):
         self.n = n
         self.n_graphs = n_graphs
         self.mode = mode
@@ -25,7 +25,7 @@ class SBM_Dataset(Dataset):
 
         if mode == 'pre-generate':
             graph_range = tqdm(range(self.n_graphs)) if verbose else range(self.n_graphs)
-            self.dataset = Parallel(n_jobs=-1)(delayed(self._generate_graph)() for _ in graph_range)
+            self.dataset = Parallel(n_jobs=n_jobs)(delayed(self._generate_graph)() for _ in graph_range)
 
     def _generate_graph(self):
         G = nx.generators.community.stochastic_block_model(self.sizes, self.p)
@@ -38,12 +38,12 @@ class SBM_Dataset(Dataset):
 
     def __getitem__(self, idx):
         if self.mode == 'pre-generate':
-            G, labels = self.dataset[idx]
+            sample = self.dataset[idx]
         elif self.mode == 'on-the-fly':
-            G, labels = self._generate_graph()
+            sample = self._generate_graph()
         else:
             raise NotImplementedError()
-        return G, labels
+        return sample
 
 
 class SBM_Dataset_GNN(SBM_Dataset):
@@ -51,8 +51,8 @@ class SBM_Dataset_GNN(SBM_Dataset):
         super().__init__(n, k, p_in, p_out, **kwargs)
         self.J = J
 
-    def __getitem__(self, idx):
-        G, labels = super().__getitem__(idx)
+    def _generate_graph(self):
+        G, labels = super()._generate_graph()
         W = np.array(nx.adjacency_matrix(G).todense(), dtype=np.float32)
         WW, x = compute_operators(W, self.J)
         return WW, x, labels
@@ -63,8 +63,8 @@ class SBM_Dataset_LGNN(SBM_Dataset):
         super().__init__(n, k, p_in, p_out, **kwargs)
         self.J = J
 
-    def __getitem__(self, idx):
-        G, labels = super().__getitem__(idx)
+    def _generate_graph(self):
+        G, labels = super()._generate_graph()
         W = np.array(nx.adjacency_matrix(G).todense(), dtype=np.float32)
         WW, x = compute_operators(W, self.J)
         W_lg, PmPd = get_linear_graph(W)
